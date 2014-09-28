@@ -1,0 +1,182 @@
+---
+title       : Solving Large Scale Machine Learning for Online Advertising
+subtitle    : 
+author      : Wush Wu
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : zenburn      # 
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+--- &vcenter
+
+## Two Approach of Large Scale Machine Learning
+
+- Parallelize existing algorithms
+- Design new algorithms particularlly for distributed settings
+
+Chih-Jen Lin. Keynote speech at Taiwan Data Science Conference, Taipei, August 30, 2014.
+
+$$f(\theta) : \mathbb{R}^m \rightarrow \mathbb{R}$$
+
+### Example
+
+Logistic Regression in Online Advertising
+
+$$f\left(\theta | (y_1, x_1), (y_2, x_2), ..., (y_T, x_T)\right) = \sum_{t=1}^T{- y_t log\left(\sigma(x_t^T \theta)\right) - (1 - y_t) log\left(1 - \sigma(x_t^T \theta)\right)}$$
+
+--- &vcenter
+
+## Parallelize Existing Algorithms
+
+- Parallelize Matrix-Vector Multiplication: $X^T \theta$
+- Gradient Decent $\theta^{t+1} = \theta^t - \eta(f, \theta^t) g(\theta^t)$
+
+<img src="assets/img/base.jpg"/ style="max-width:100%; max-height:100%;">
+
+--- &vcenter
+
+## Deepak Agarwal. Computational Advertising: The LinkedIn Way. CIKM 2013.
+
+### Training Logistic Regression
+
+- Too much data to fit on a single machine
+    - Billions of observations, millions of features
+- A Naïve approach
+    - Partition the data and run logistic regression for each partition
+    - Take the mean of the learned coefficients
+    - Problem: Not guaranteed to converge to the model from single machine!
+- Alternating Direction Method of Multipliers (ADMM)
+    - Boyd et al. 2011 (based on earlier work from the 70s)
+    - Set up a constraint that each partition’s coefficient = global consensus
+    - Solve the optimization problem using Lagrange Multipliers
+
+--- &vcenter 
+
+## ADMM1
+
+<img src="assets/img/admm.jpg"/ style="max-width:100%; max-height:100%;">
+
+--- &vcenter 
+
+## ADMM2
+
+<img src="assets/img/admm2.jpg"/ style="max-width:100%; max-height:100%;">
+
+--- &vcenter
+
+## Stochastic Gradient Decent
+
+$\theta^{t+1} = \theta^t - \eta g(\theta^t)$
+
+- $\eta \in \mathbb{R}$ is called *learning rate*.
+- For simplicity, denote $g(\theta^t)$ as $g_t$.
+
+--- &vcenter
+
+## H. Brendan McMahan, et. al. Ad Click Prediction: a View from the Trenches. KDD 2013.
+
+### H. Brendan McMahan. Follow-the-Regularized-Leader and Mirror Descent: Equivalence Theorems and L1 Regularization. AISTATS 2011
+
+$$\theta^{t+1} = argmin_{\theta} g_t^T \theta + \frac{1}{2 \eta_t} (\theta - \theta^t)^T(\theta - \theta^t)$$
+
+### Follow The Proximal Regularized Leader
+
+$$\theta^{t+1} = argmin_{\theta} g_{1:t}^T \theta + t \lambda_1 ||\theta||_1 + \frac{\lambda_2}{2} \sum_{s = 1}^t {||Q_s^{1/2} (\theta - \theta^s)||_2^2}$$
+
+- Introduce $L_1$ regularization for sparsity.
+
+--- &vcenter
+
+## Online Learning
+
+$$Regret := \sum_{t=1}^T{f_t(\theta^t)} - min_{\theta \in \mathbb{F}} \sum_{t=1}^T{f_t(\theta)}$$
+
+--- &vcenter
+
+### H. Brendan McMahan and Matthew Streeter. Adaptive Bound Optimization for Online Convex Optimization. COLT 2010.
+
+- Global Learning Rate achieves Regret Bound: $O(DM\sqrt{T})$
+    - $D$ is the $L_2$ diameter of the feasible set
+    - $M$ is the $L_2$ bound of $g$
+- In text classification or online advertising, the feature $x_i$:
+    - Many features only occur rarely.
+    - Few features occur very often.
+- Per-Coordinate Learning Rates
+    - Achieve a better bound $O(\sqrt{T} n^{1 - \frac{\alpha}{2}})$
+        - $\theta \in \mathbb{R}^n$. If $\mathbb{F} = \left[-frac{1}{2}, frac{1}{2}\right]^n$, $D = \sqrt{n}$.
+        - $Prob(x_{t,i} = 1) \sim i^{-\alpha}$ for some $\alpha \in [1,2)$.
+
+--- &vcenter 
+
+## Comparison
+
+<img src="assets/img/tron-ftprl.png" style="max-width:100%; max-height:100%;"/>
+
+--- &twocolvcenter
+
+## Olivier Chapelle, et. al. Simple and scalable response prediction for display advertising.
+
+*** =left
+
+### Online Learning
+
+- Optimize the sample risk to a rough precision quite fast
+- A handful of passes over the data.
+- Tricky to parallelize
+
+*** =right
+
+### Batch Learning
+
+- Optimize the sample risk to a high accuracy once they are in a *good neighborhood* of the optimal solution.
+- Quite slow in reaching the solution.
+- Straightforward to generalize batch learning to distributed environment.
+
+--- &vcenter
+
+## Hybrid Algorithm
+
+- For each node, making one online pass over its local data according to adaptive gradient updates.
+- Average these local weights to be the initial value of L-BFGS.
+
+--- &vcenter
+
+### Some Issues with Hadoop
+
+- Map-Reduce [Dean and Ghemawat 2008] and its open source implementation
+Hadoop is rather ill-suited for machine learning algorithms as several researchers in the field have observed [Low et al. 2010; Zaharia et al. 2012], because it does not easily allow iterative algorithms, such as typical optimization algorithms used to minimize the objective function.
+- AllReduce implementation on Hadoop.
+
+--- &vcenter
+
+## Xinran He, et. al. Practical Lessons from Predicting Clicks on Ads at Facebook. ADKDD 2014.
+
+### Decision Tree Feature Transforms
+
+- Gradient Boosted Decision Tree
+- Encode the input $x_t$ to binary representation.
+- Trained in Batch Mode.
+
+### Online Linear Classifier
+
+<img src="assets/img/facebookLearningRate.jpg" style="max-height:50%;"/>
+
+--- &vcenter
+
+<img src="assets/img/facebook.jpg" style="max-height:100%;"/>
+
+--- &vcenter
+
+## FTPRL applies to another machine learning algorithm
+
+- <https://www.kaggle.com/c/criteo-display-ad-challenge>
+    - Logistic Regression achieves about 0.462
+    - Neuron Network achieves about 0.453
+
+<img src="assets/img/kagglecriteo.jpg" style="max-height:100%;"/>
+
+--- &vcenter
+
+## Q&A

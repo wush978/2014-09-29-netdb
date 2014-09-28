@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solving Large Scale Machine Learning for Online Advertising</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Solving Large Scale Machine Learning for Online Advertising">
+  <meta name="author" content="Wush Wu">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/zenburn.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Solving Large Scale Machine Learning for Online Advertising</h1>
+    <h2></h2>
+    <p>Wush Wu<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1">
+<hgroup>
+  <h2>Two Approach of Large Scale Machine Learning</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li>Parallelize existing algorithms</li>
+<li>Design new algorithms particularlly for distributed settings</li>
+</ul>
+
+<p>Chih-Jen Lin. Keynote speech at Taiwan Data Science Conference, Taipei, August 30, 2014.</p>
+
+<p>\[f(\theta) : \mathbb{R}^m \rightarrow \mathbb{R}\]</p>
+
+<h3>Example</h3>
+
+<p>Logistic Regression in Online Advertising</p>
+
+<p>\[f\left(\theta | (y_1, x_1), (y_2, x_2), ..., (y_T, x_T)\right) = \sum_{t=1}^T{- y_t log\left(\sigma(x_t^T \theta)\right) - (1 - y_t) log\left(1 - \sigma(x_t^T \theta)\right)}\]</p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-2">
+<hgroup>
+  <h2>Parallelize Existing Algorithms</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li>Parallelize Matrix-Vector Multiplication: \(X^T \theta\)</li>
+<li>Gradient Decent \(\theta^{t+1} = \theta^t - \eta(f, \theta^t) g(\theta^t)\)</li>
+</ul>
+
+<p><img src="assets/img/base.jpg"/ style="max-width:100%; max-height:100%;"></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-3">
+<hgroup>
+  <h2>Deepak Agarwal. Computational Advertising: The LinkedIn Way. CIKM 2013.</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<h3>Training Logistic Regression</h3>
+
+<ul>
+<li>Too much data to fit on a single machine
+
+<ul>
+<li>Billions of observations, millions of features</li>
+</ul></li>
+<li>A Naïve approach
+
+<ul>
+<li>Partition the data and run logistic regression for each partition</li>
+<li>Take the mean of the learned coefficients</li>
+<li>Problem: Not guaranteed to converge to the model from single machine!</li>
+</ul></li>
+<li>Alternating Direction Method of Multipliers (ADMM)
+
+<ul>
+<li>Boyd et al. 2011 (based on earlier work from the 70s)</li>
+<li>Set up a constraint that each partition’s coefficient = global consensus</li>
+<li>Solve the optimization problem using Lagrange Multipliers</li>
+</ul></li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-4">
+<hgroup>
+  <h2>ADMM1</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p><img src="assets/img/admm.jpg"/ style="max-width:100%; max-height:100%;"></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-5">
+<hgroup>
+  <h2>ADMM2</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p><img src="assets/img/admm2.jpg"/ style="max-width:100%; max-height:100%;"></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-6">
+<hgroup>
+  <h2>Stochastic Gradient Decent</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p>\(\theta^{t+1} = \theta^t - \eta g(\theta^t)\)</p>
+
+<ul>
+<li>\(\eta \in \mathbb{R}\) is called <em>learning rate</em>.</li>
+<li>For simplicity, denote \(g(\theta^t)\) as \(g_t\).</li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-7">
+<hgroup>
+  <h2>H. Brendan McMahan, et. al. Ad Click Prediction: a View from the Trenches. KDD 2013.</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<h3>H. Brendan McMahan. Follow-the-Regularized-Leader and Mirror Descent: Equivalence Theorems and L1 Regularization. AISTATS 2011</h3>
+
+<p>\[\theta^{t+1} = argmin_{\theta} g_t^T \theta + \frac{1}{2 \eta_t} (\theta - \theta^t)^T(\theta - \theta^t)\]</p>
+
+<h3>Follow The Proximal Regularized Leader</h3>
+
+<p>\[\theta^{t+1} = argmin_{\theta} g_{1:t}^T \theta + t \lambda_1 ||\theta||_1 + \frac{\lambda_2}{2} \sum_{s = 1}^t {||Q_s^{1/2} (\theta - \theta^s)||_2^2}\]</p>
+
+<ul>
+<li>Introduce \(L_1\) regularization for sparsity.</li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-8">
+<hgroup>
+  <h2>Online Learning</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p>\[Regret := \sum_{t=1}^T{f_t(\theta^t)} - min_{\theta \in \mathbb{F}} \sum_{t=1}^T{f_t(\theta)}\]</p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-9">
+<hgroup>
+  <h3>H. Brendan McMahan and Matthew Streeter. Adaptive Bound Optimization for Online Convex Optimization. COLT 2010.</h3>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li>Global Learning Rate achieves Regret Bound: \(O(DM\sqrt{T})\)
+
+<ul>
+<li>\(D\) is the \(L_2\) diameter of the feasible set</li>
+<li>\(M\) is the \(L_2\) bound of \(g\)</li>
+</ul></li>
+<li>In text classification or online advertising, the feature \(x_i\):
+
+<ul>
+<li>Many features only occur rarely.</li>
+<li>Few features occur very often.</li>
+</ul></li>
+<li>Per-Coordinate Learning Rates
+
+<ul>
+<li>Achieve a better bound \(O(\sqrt{T} n^{1 - \frac{\alpha}{2}})\)
+
+<ul>
+<li>\(\theta \in \mathbb{R}^n\). If \(\mathbb{F} = \left[-frac{1}{2}, frac{1}{2}\right]^n\), \(D = \sqrt{n}\).</li>
+<li>\(Prob(x_{t,i} = 1) \sim i^{-\alpha}\) for some \(\alpha \in [1,2)\).</li>
+</ul></li>
+</ul></li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-10">
+<hgroup>
+  <h2>Comparison</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p><img src="assets/img/tron-ftprl.png" style="max-width:100%; max-height:100%;"/></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-11">
+<hgroup>
+  <h2>Olivier Chapelle, et. al. Simple and scalable response prediction for display advertising.</h2>
+</hgroup>
+<div style='float:left;width:48%;' class='flexbox vcenter'>
+  <h3>Online Learning</h3>
+
+<ul>
+<li>Optimize the sample risk to a rough precision quite fast</li>
+<li>A handful of passes over the data.</li>
+<li>Tricky to parallelize</li>
+</ul>
+
+</div>
+<div style='float:right;width:48%;' class='flexbox vcenter'>
+  <h3>Batch Learning</h3>
+
+<ul>
+<li>Optimize the sample risk to a high accuracy once they are in a <em>good neighborhood</em> of the optimal solution.</li>
+<li>Quite slow in reaching the solution.</li>
+<li>Straightforward to generalize batch learning to distributed environment.</li>
+</ul>
+
+</div>
+</slide>
+<slide class="" id="slide-12">
+<hgroup>
+  <h2>Hybrid Algorithm</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li>For each node, making one online pass over its local data according to adaptive gradient updates.</li>
+<li>Average these local weights to be the initial value of L-BFGS.</li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-13">
+<hgroup>
+  <h3>Some Issues with Hadoop</h3>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li>Map-Reduce [Dean and Ghemawat 2008] and its open source implementation
+Hadoop is rather ill-suited for machine learning algorithms as several researchers in the field have observed [Low et al. 2010; Zaharia et al. 2012], because it does not easily allow iterative algorithms, such as typical optimization algorithms used to minimize the objective function.</li>
+<li>AllReduce implementation on Hadoop.</li>
+</ul>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-14">
+<hgroup>
+  <h2>Xinran He, et. al. Practical Lessons from Predicting Clicks on Ads at Facebook. ADKDD 2014.</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<h3>Decision Tree Feature Transforms</h3>
+
+<ul>
+<li>Gradient Boosted Decision Tree</li>
+<li>Encode the input \(x_t\) to binary representation.</li>
+<li>Trained in Batch Mode.</li>
+</ul>
+
+<h3>Online Linear Classifier</h3>
+
+<p><img src="assets/img/facebookLearningRate.jpg" style="max-height:50%;"/></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-15">
+<hgroup>
+  
+</hgroup>
+<article class = 'flexbox vcenter'>
+<p><img src="assets/img/facebook.jpg" style="max-height:100%;"/></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-16">
+<hgroup>
+  <h2>FTPRL applies to another machine learning algorithm</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+<ul>
+<li><a href="https://www.kaggle.com/c/criteo-display-ad-challenge">https://www.kaggle.com/c/criteo-display-ad-challenge</a>
+
+<ul>
+<li>Logistic Regression achieves about 0.462</li>
+<li>Neuron Network achieves about 0.453</li>
+</ul></li>
+</ul>
+
+<p><img src="assets/img/kagglecriteo.jpg" style="max-height:100%;"/></p>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+<slide class="" id="slide-17">
+<hgroup>
+  <h2>Q&amp;A</h2>
+</hgroup>
+<article class = 'flexbox vcenter'>
+
+</article>
+<!-- Presenter Notes -->
+</slide>
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Two Approach of Large Scale Machine Learning'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Parallelize Existing Algorithms'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Deepak Agarwal. Computational Advertising: The LinkedIn Way. CIKM 2013.'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='ADMM1'>
+         4
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=5 title='ADMM2'>
+         5
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=6 title='Stochastic Gradient Decent'>
+         6
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=7 title='H. Brendan McMahan, et. al. Ad Click Prediction: a View from the Trenches. KDD 2013.'>
+         7
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=8 title='Online Learning'>
+         8
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=9 title='H. Brendan McMahan and Matthew Streeter. Adaptive Bound Optimization for Online Convex Optimization. COLT 2010.'>
+         9
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=10 title='Comparison'>
+         10
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=11 title='Olivier Chapelle, et. al. Simple and scalable response prediction for display advertising.'>
+         11
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=12 title='Hybrid Algorithm'>
+         12
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=13 title='Some Issues with Hadoop'>
+         13
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=14 title='Xinran He, et. al. Practical Lessons from Predicting Clicks on Ads at Facebook. ADKDD 2014.'>
+         14
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=15 title=''>
+         15
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=16 title='FTPRL applies to another machine learning algorithm'>
+         16
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=17 title='Q&amp;A'>
+         17
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
