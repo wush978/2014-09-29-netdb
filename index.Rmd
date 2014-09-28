@@ -105,7 +105,7 @@ $$Regret := \sum_{t=1}^T{f_t(\theta^t)} - min_{\theta \in \mathbb{F}} \sum_{t=1}
     - Few features occur very often.
 - Per-Coordinate Learning Rates
     - Achieve a better bound $O(\sqrt{T} n^{1 - \frac{\alpha}{2}})$
-        - $\theta \in \mathbb{R}^n$. If $\mathbb{F} = \left[-frac{1}{2}, frac{1}{2}\right]^n$, $D = \sqrt{n}$.
+        - $\theta \in \mathbb{R}^n$. If $\mathbb{F} = \left[-\frac{1}{2}, \frac{1}{2}\right]^n$, $D = \sqrt{n}$.
         - $Prob(x_{t,i} = 1) \sim i^{-\alpha}$ for some $\alpha \in [1,2)$.
 
 --- &vcenter 
